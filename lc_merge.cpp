@@ -99,21 +99,8 @@ void project_lidar_points(){
     cv::undistort(cv_ptr->image, outputImage, cam_matrix, dist_matrix);
 
     for( size_t i=0; i<cloudSize; i++){
-        // point_vector.at<float>(0,0) = laserCloudIn->points[i].x;
-        // point_vector.at<float>(1,0) = laserCloudIn->points[i].y;
-        // point_vector.at<float>(2,0) = laserCloudIn->points[i].z;
-        // point_vector.at<float>(3,0) = 1;
 
         if(laserCloudIn->points[i].z < 1 || laserCloudIn->points[i].z > 2) continue;
-
-        // cv::Mat image_coor = proj_matrix * trans_matrix * point_vector;
-
-        // short x = short(image_coor.at<float>(0,0)/image_coor.at<float>(2,0));
-        // short y = short(image_coor.at<float>(1,0)/image_coor.at<float>(2,0));
-
-        // if(y >= IMAGE_HEIGHT || x >= IMAGE_WIDTH || x < 0 || y < 0){
-        //     continue;
-        // }
 
         std::vector<cv::Point3f> lid_pts;
         cv::Point3f lid_pt(laserCloudIn->points[i].x, laserCloudIn->points[i].y, laserCloudIn->points[i].z);
@@ -125,8 +112,6 @@ void project_lidar_points(){
         if(y_ >= IMAGE_HEIGHT || x_ >= IMAGE_WIDTH || x_ < 0 || y_ < 0){
             continue;
         }
-        // cv::circle(cv_ptr->image, cv::Point(x,y), 4, cv::Scalar(0,255,0), 1, 8, 0);
-        // cv::circle(outputImage, cv::Point(x,y), 4, cv::Scalar(255,0,0), 1, 8, 0);
         cv::circle(outputImage, cv::Point(x_,y_), 4, cv::Scalar(0,255,0), 1, 8, 0);
         circle_cntr++;
     }
@@ -135,7 +120,7 @@ void project_lidar_points(){
     cv::Point3f pt(-0.373926, 0.0987597, 1.77497);
     poi.push_back(pt);
     cv::projectPoints(poi, rvec_vec, tvec, cam_matrix, dist_matrix, proj_pts);
-    cout << "POI:" << proj_pts << endl;
+
     short x_ = short( proj_pts.at<float>(0,0) );
     short y_ = short( proj_pts.at<float>(0,1) );
     if(y_ >= IMAGE_HEIGHT || x_ >= IMAGE_WIDTH || x_ < 0 || y_ < 0){
@@ -150,7 +135,7 @@ void project_lidar_points(){
     cam_poi.push_back(cam_pt);
     cv::Rodrigues(cv::Mat::eye(3,3,CV_32FC1), rvec_vec);
     cv::projectPoints(cam_poi, rvec_vec, cv::Mat::zeros(3,1,CV_32FC1), cam_matrix_org, dist_matrix, proj_pts);
-    cout << "POI:" << proj_pts << endl;
+
     x_ = short( proj_pts.at<float>(0,0) );
     y_ = short( proj_pts.at<float>(0,1) );
     if(y_ >= IMAGE_HEIGHT || x_ >= IMAGE_WIDTH || x_ < 0 || y_ < 0){
@@ -163,7 +148,6 @@ void project_lidar_points(){
     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", cv_ptr->image).toImageMsg();
     lc_image_pub.publish(msg);
     ROS_INFO("cicle cntr: %d\n",circle_cntr);
-    // cv::imshow("view", cv_ptr->image);
     cv::imshow("view", outputImage);
     cv::waitKey(30);
 }
