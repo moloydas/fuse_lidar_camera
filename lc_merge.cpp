@@ -81,6 +81,37 @@ pcl::PointCloud<PointType> transform(pcl::PointCloud<PointType> pc, float x, flo
 	return new_cloud;
 }
 
+/*
+    input: Image, trans, rot, projection, distortion, points to be projected, image dim, color
+ */
+void overlay_points_on_image(   cv::Mat &image,
+                                cv::Mat rot,
+                                cv::Mat trans,
+                                cv::Mat p_mat,
+                                cv::Mat dist_mat,
+                                std::vector<cv::Point3f> pts,
+                                unsigned int img_height,
+                                unsigned int img_width,
+                                cv::Scalar color,
+                                int thickness){
+
+    cv::Mat proj_pts;
+    cv::Mat rvec;
+    cv::Rodrigues(rot, rvec);
+    cv::projectPoints(pts, rvec, trans, p_mat, dist_mat, proj_pts);
+
+    short x_,y_=0;
+    for(size_t i=0; i < proj_pts.rows; i++){
+
+        x_ = short( proj_pts.at<float>(i,0) );
+        y_ = short( proj_pts.at<float>(i,1) );
+
+        if(y_ < img_height || x_ < img_width || x_ > 0 || y_ > 0){
+            cv::circle(image, cv::Point(x_,y_), 4, color, thickness, 8, 0);
+        }
+    }
+}
+
 void project_lidar_points(){
     if(new_lidar_cloud == false || new_image == false){
         return;
@@ -89,65 +120,76 @@ void project_lidar_points(){
     new_lidar_cloud = false;
     new_image = false;
 
-    int circle_cntr = 0;
     cloudSize = laserCloudIn->points.size();
 
     cv::Mat outputImage;
-    cv::Mat proj_pts;
-    cv::Mat rvec_vec;
-    cv::Rodrigues(rvec, rvec_vec);
+
     cv::undistort(cv_ptr->image, outputImage, cam_matrix, dist_matrix);
 
-    for( size_t i=0; i<cloudSize; i++){
+    std::vector<cv::Point3f> lid_pts;
 
+    for( size_t i=0; i<cloudSize; i++){
         if(laserCloudIn->points[i].z < 1 || laserCloudIn->points[i].z > 2) continue;
 
-        std::vector<cv::Point3f> lid_pts;
-        cv::Point3f lid_pt(laserCloudIn->points[i].x, laserCloudIn->points[i].y, laserCloudIn->points[i].z);
-        lid_pts.push_back(lid_pt);
-        cv::projectPoints(lid_pts, rvec_vec, tvec, cam_matrix, dist_matrix, proj_pts);
-        short x_ = short( proj_pts.at<float>(0,0) );
-        short y_ = short( proj_pts.at<float>(0,1) );
-
-        if(y_ >= IMAGE_HEIGHT || x_ >= IMAGE_WIDTH || x_ < 0 || y_ < 0){
-            continue;
-        }
-        cv::circle(outputImage, cv::Point(x_,y_), 4, cv::Scalar(0,255,0), 1, 8, 0);
-        circle_cntr++;
+        lid_pts.push_back( cv::Point3f(laserCloudIn->points[i].x, laserCloudIn->points[i].y, laserCloudIn->points[i].z) );
     }
+
+    overlay_points_on_image(   outputImage,
+                                rvec,
+                                tvec,
+                                cam_matrix,
+                                dist_matrix,
+                                lid_pts,
+                                720,
+                                1280,
+                                cv::Scalar(0,255,0),
+                                1 );
 
     std::vector<cv::Point3f> poi;
-    cv::Point3f pt(-0.373926, 0.0987597, 1.77497);
-    poi.push_back(pt);
-    cv::projectPoints(poi, rvec_vec, tvec, cam_matrix, dist_matrix, proj_pts);
+    poi.push_back(cv::Point3f(-0.725787, -0.300817, 1.75655));
+    poi.push_back(cv::Point3f(-0.373926, 0.0987597, 1.77497));
+    poi.push_back(cv::Point3f(-0.706638, 0.407004, 1.74148));
+    poi.push_back(cv::Point3f(-1.08684, 0.00340891, 1.74881));
+    poi.push_back(cv::Point3f(0.113457, -0.31275, 1.84271));
+    poi.push_back(cv::Point3f(0.468701, 0.0889406, 1.90563));
+    poi.push_back(cv::Point3f(0.137314, 0.406434, 1.81652));
+    poi.push_back(cv::Point3f(-0.234975, -0.0053591, 1.76959));
 
-    short x_ = short( proj_pts.at<float>(0,0) );
-    short y_ = short( proj_pts.at<float>(0,1) );
-    if(y_ >= IMAGE_HEIGHT || x_ >= IMAGE_WIDTH || x_ < 0 || y_ < 0){
-        ;
-    }
-    else{
-        cv::circle(outputImage, cv::Point(x_,y_), 4, cv::Scalar(255,0,0), 4, 8, 0);
-    }
+    overlay_points_on_image(   outputImage,
+                                rvec,
+                                tvec,
+                                cam_matrix,
+                                dist_matrix,
+                                poi,
+                                720,
+                                1280,
+                                cv::Scalar(255,0,0),
+                                4 );
 
     std::vector<cv::Point3f> cam_poi;
-    cv::Point3f cam_pt(-0.257861, -0.350891, 1.66645);
-    cam_poi.push_back(cam_pt);
-    cv::Rodrigues(cv::Mat::eye(3,3,CV_32FC1), rvec_vec);
-    cv::projectPoints(cam_poi, rvec_vec, cv::Mat::zeros(3,1,CV_32FC1), cam_matrix_org, dist_matrix, proj_pts);
+    cam_poi.push_back(cv::Point3f(-0.257861, -0.350891, 1.66645));
+    cam_poi.push_back(cv::Point3f(0.111404, 0.0422095 ,1.6397));
+    cam_poi.push_back(cv::Point3f(-0.223684, 0.35374 ,1.59211));
+    cam_poi.push_back(cv::Point3f(-0.592948, -0.0393605 ,1.61885));
+    cam_poi.push_back(cv::Point3f(0.614391 ,-0.356681 ,1.73359));
+    cam_poi.push_back(cv::Point3f(0.970656, 0.0406231 ,1.8162));
+    cam_poi.push_back(cv::Point3f(0.633394, 0.351058 ,1.77768));
+    cam_poi.push_back(cv::Point3f(0.277129, -0.0462458 ,1.69507));
 
-    x_ = short( proj_pts.at<float>(0,0) );
-    y_ = short( proj_pts.at<float>(0,1) );
-    if(y_ >= IMAGE_HEIGHT || x_ >= IMAGE_WIDTH || x_ < 0 || y_ < 0){
-        ;
-    }
-    else{
-        cv::circle(outputImage, cv::Point(x_,y_), 4, cv::Scalar(255,255,0), 4, 8, 0);
-    }
+    overlay_points_on_image(   outputImage,
+                                cv::Mat::eye(3,3,CV_32FC1),
+                                cv::Mat::zeros(3,1,CV_32FC1),
+                                cam_matrix,
+                                dist_matrix,
+                                cam_poi,
+                                720,
+                                1280,
+                                cv::Scalar(255,255,0),
+                                4 );
 
     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", cv_ptr->image).toImageMsg();
     lc_image_pub.publish(msg);
-    ROS_INFO("cicle cntr: %d\n",circle_cntr);
+
     cv::imshow("view", outputImage);
     cv::waitKey(30);
 }
@@ -162,12 +204,10 @@ void get_lidar_cloud(const sensor_msgs::PointCloud2ConstPtr& msg){
 }
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg){
-    try
-    {
+    try{
       cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
     }
-    catch (cv_bridge::Exception& e)
-    {
+    catch (cv_bridge::Exception& e){
       ROS_ERROR("cv_bridge exception: %s", e.what());
       return;
     }
