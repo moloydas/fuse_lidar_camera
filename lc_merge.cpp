@@ -128,6 +128,9 @@ void project_lidar_points(){
     std::vector<cv::Point3f> lid_pts;
 
     for( size_t i=0; i<cloudSize; i++){
+        /*
+            Keep the points within a certain z distance
+         */
         if(laserCloudIn->points[i].z < 1 || laserCloudIn->points[i].z > 2) continue;
 
         lid_pts.push_back( cv::Point3f(laserCloudIn->points[i].x, laserCloudIn->points[i].y, laserCloudIn->points[i].z) );
@@ -185,6 +188,13 @@ void project_lidar_points(){
                                 1280,
                                 cv::Scalar(255,255,0),
                                 4 );
+
+
+    /*  TO DO:
+        * check the intensity value of that corresponding point on image
+        * if its not a road point push it to another vector
+        * publish vector
+     */
 
     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", cv_ptr->image).toImageMsg();
     lc_image_pub.publish(msg);
