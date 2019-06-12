@@ -106,7 +106,7 @@ void overlay_points_on_image(   cv::Mat &image,
         x_ = short( proj_pts.at<float>(i,0) );
         y_ = short( proj_pts.at<float>(i,1) );
 
-        if(y_ < img_height || x_ < img_width || x_ > 0 || y_ > 0){
+        if(y_ < img_height && x_ < img_width && x_ > 0 && y_ > 0){
             cv::circle(image, cv::Point(x_,y_), 4, color, thickness, 8, 0);
         }
     }
