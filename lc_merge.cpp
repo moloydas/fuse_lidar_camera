@@ -52,7 +52,6 @@ float cam_mat_org[9] = {666.435662, 0.000000, 605.686260,
 float dist_mat[5] = {-0.162663, 0.025235, -0.001717, 0.000203, 0.000000};
 
 cv::Mat proj_matrix;
-cv::Mat point_vector;
 cv::Mat trans_matrix;
 cv::Mat dist_matrix;
 cv::Mat cam_matrix;
@@ -226,7 +225,7 @@ int main(int argc, char **argv){
     lc_image_pub = it.advertise("lc_image",1);
 
     proj_matrix = cv::Mat(3, 4, CV_32FC1, p_mat);
-    point_vector = cv::Mat(4, 1, CV_32FC1, cv::Scalar::all(0));
+
     trans_matrix = cv::Mat(4, 4, CV_32FC1, r_t);
     dist_matrix = cv::Mat(1,5, CV_32FC1, dist_mat);
     cam_matrix = cv::Mat(3,3, CV_32FC1, cam_mat);
