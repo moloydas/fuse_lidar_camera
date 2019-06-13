@@ -246,7 +246,7 @@ int main(int argc, char **argv){
     image_transport::ImageTransport it(n);
 
     ros::Subscriber sub_lidar = n.subscribe("velodyne_points",40,get_lidar_cloud);
-    image_sub = it.subscribe("zed/zed_node/left_raw/image_raw_color", 1,imageCb);
+    image_sub = it.subscribe("image_raw", 1,imageCb);
     lc_image_pub = it.advertise("lc_image",1);
 
     std::string calibration_filename;

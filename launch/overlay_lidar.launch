@@ -1,5 +1,6 @@
 <launch>
     <node pkg="project_lidar_on_image" type="project_lidar_on_image_node" name="project_lidar_on_image_node" output="screen">
         <param name="calibration_file" type="string" value="/home/moloy/ros_ws/iiit_ros_ws/src/aruco_mapping/data/zed12407.ini"/>
+        <remap from="image_raw" to="zed/zed_node/left_raw/image_raw_color"/>
     </node>
 </launch>
