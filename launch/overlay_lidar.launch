@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="project_lidar_on_image" type="project_lidar_on_image_node" name="project_lidar_on_image_node">
+    </node>
+</launch>
