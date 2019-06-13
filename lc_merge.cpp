@@ -150,49 +150,6 @@ void project_lidar_points(){
                                 cv::Scalar(0,255,0),
                                 1 );
 
-    std::vector<cv::Point3f> poi;
-    poi.push_back(cv::Point3f(-0.725787, -0.300817, 1.75655));
-    poi.push_back(cv::Point3f(-0.373926, 0.0987597, 1.77497));
-    poi.push_back(cv::Point3f(-0.706638, 0.407004, 1.74148));
-    poi.push_back(cv::Point3f(-1.08684, 0.00340891, 1.74881));
-    poi.push_back(cv::Point3f(0.113457, -0.31275, 1.84271));
-    poi.push_back(cv::Point3f(0.468701, 0.0889406, 1.90563));
-    poi.push_back(cv::Point3f(0.137314, 0.406434, 1.81652));
-    poi.push_back(cv::Point3f(-0.234975, -0.0053591, 1.76959));
-
-    overlay_points_on_image(   outputImage,
-                                *rot_mat,
-                                *t_mat,
-                                *proj_matrix,
-                                *dist_matrix,
-                                poi,
-                                720,
-                                1280,
-                                cv::Scalar(255,0,0),
-                                4 );
-
-    std::vector<cv::Point3f> cam_poi;
-    cam_poi.push_back(cv::Point3f(-0.257861, -0.350891, 1.66645));
-    cam_poi.push_back(cv::Point3f(0.111404, 0.0422095 ,1.6397));
-    cam_poi.push_back(cv::Point3f(-0.223684, 0.35374 ,1.59211));
-    cam_poi.push_back(cv::Point3f(-0.592948, -0.0393605 ,1.61885));
-    cam_poi.push_back(cv::Point3f(0.614391 ,-0.356681 ,1.73359));
-    cam_poi.push_back(cv::Point3f(0.970656, 0.0406231 ,1.8162));
-    cam_poi.push_back(cv::Point3f(0.633394, 0.351058 ,1.77768));
-    cam_poi.push_back(cv::Point3f(0.277129, -0.0462458 ,1.69507));
-
-    overlay_points_on_image(   outputImage,
-                                cv::Mat::eye(3,3,CV_32FC1),
-                                cv::Mat::zeros(3,1,CV_32FC1),
-                                *proj_matrix,
-                                *dist_matrix,
-                                cam_poi,
-                                720,
-                                1280,
-                                cv::Scalar(255,255,0),
-                                4 );
-
-
     /*  TO DO:
         * check the intensity value of that corresponding point on image
         * if its not a road point push it to another vector
