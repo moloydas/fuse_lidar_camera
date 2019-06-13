@@ -10,25 +10,13 @@ pcl::PointCloud<PointType>::Ptr laserCloudIn;
 
 ros::Publisher pub;
 
-float r_t[16] = {       0.999049,  0.00912775  ,-0.0426374,    0.569389,
--0.00865455,    0.999899,   0.0112696,  -0.0721242,
-   0.042736,  -0.0108898,    0.999027,  -0.0879596,
-          0,           0,           0,           1};
-
-float rot[9] = {       0.999049,  0.00912775  ,-0.0426374,
-                        -0.00865455,    0.999899,   0.0112696,
-                        0.042736,  -0.0108898,    0.999027};
-
-float translation[3] = {0.569389, -0.0721242, -0.0879596};
-
 cv::Mat *proj_matrix;
 cv::Mat *camera_intrinsic;
 cv::Mat *dist_matrix;
 cv::Size *image_size;
 
-cv::Mat rvec;
-cv::Mat tvec;
-cv::Mat trans_matrix;
+cv::Mat *rot_mat;
+cv::Mat *t_mat;
 
 cv_bridge::CvImagePtr cv_ptr;
 image_transport::Publisher lc_image_pub;
@@ -152,8 +140,8 @@ void project_lidar_points(){
     }
 
     overlay_points_on_image(   outputImage,
-                                rvec,
-                                tvec,
+                                *rot_mat,
+                                *t_mat,
                                 *proj_matrix,
                                 *dist_matrix,
                                 lid_pts,
@@ -173,8 +161,8 @@ void project_lidar_points(){
     poi.push_back(cv::Point3f(-0.234975, -0.0053591, 1.76959));
 
     overlay_points_on_image(   outputImage,
-                                rvec,
-                                tvec,
+                                *rot_mat,
+                                *t_mat,
                                 *proj_matrix,
                                 *dist_matrix,
                                 poi,
@@ -253,11 +241,30 @@ int main(int argc, char **argv){
     n.getParam("/project_lidar_on_image_node/calibration_file", calibration_filename);
     parse_calibration_file(calibration_filename);
 
-    rvec = cv::Mat(3,3, CV_32FC1, rot);
-    tvec = cv::Mat(3,1, CV_32FC1, translation);
+    cout << "P mat" << endl << *proj_matrix << endl;
+    cout << "Dist mat" << endl << *dist_matrix << endl;
 
-    cout << "P mat" << endl << proj_matrix << endl;
-    cout << "T mat" << endl << trans_matrix << endl;
+    std::string trans_filename;
+    n.getParam("/project_lidar_on_image_node/transformation_matrix", trans_filename);
+
+    rot_mat = new(cv::Mat)(3,3, CV_64FC1);
+    t_mat = new(cv::Mat)(3,1, CV_64FC1);
+
+    ifstream f(trans_filename.c_str());
+
+    for(int i=0;i<3;i++){
+        for(int j=0;j<4;j++){
+            if(j != 3){
+                f >> rot_mat->at<double>(i,j);
+            }
+            else{
+                f >> t_mat->at<double>(i,0);
+            }
+        }
+    }
+
+    cout << "Rot_mat" << endl << *rot_mat << endl;
+    cout << "translation_mat" << endl << *t_mat << endl;
 
     cv_ptr = cv_bridge::CvImagePtr(new cv_bridge::CvImage);
 
