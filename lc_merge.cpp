@@ -21,27 +21,14 @@ float rot[9] = {       0.999049,  0.00912775  ,-0.0426374,
 
 float translation[3] = {0.569389, -0.0721242, -0.0879596};
 
-float p_mat[12] = {647.419673, 0.000000, 517.989483,   0,
-                0.000000, 647.419673, 310.535839,  0,
-                0.000000, 0.000000, 1.000000,  0};
+cv::Mat *proj_matrix;
+cv::Mat *camera_intrinsic;
+cv::Mat *dist_matrix;
+cv::Size *image_size;
 
-float cam_mat[9] = {647.419673, 0.000000, 517.989483,
-                0.000000, 647.419673, 310.535839,
-                0.000000, 0.000000, 1.000000};
-
-float cam_mat_org[9] = {666.435662, 0.000000, 605.686260,
-                    0.000000, 668.422861, 322.413398,
-                    0.000000, 0.000000, 1.000000};
-
-float dist_mat[5] = {-0.162663, 0.025235, -0.001717, 0.000203, 0.000000};
-
-cv::Mat proj_matrix;
-cv::Mat trans_matrix;
-cv::Mat dist_matrix;
-cv::Mat cam_matrix;
-cv::Mat cam_matrix_org;
 cv::Mat rvec;
 cv::Mat tvec;
+cv::Mat trans_matrix;
 
 cv_bridge::CvImagePtr cv_ptr;
 image_transport::Publisher lc_image_pub;
@@ -103,27 +90,33 @@ bool parse_calibration_file(std::string calib_filename){
     camera_calibration_parsers::readCalibrationIni(calib_filename, camera_name, camera_calibration_data);
 
     // Alocation of memory for calibration data
-    cv::Mat  *intrinsics       = new(cv::Mat)(3, 3, CV_64F);
-    cv::Mat  *distortion_coeff = new(cv::Mat)(5, 1, CV_64F);
-    cv::Size *image_size       = new(cv::Size);
+    camera_intrinsic    = new(cv::Mat)(3, 3, CV_64FC1);
+    proj_matrix         = new(cv::Mat)(3, 3, CV_64FC1);
+    dist_matrix         = new(cv::Mat)(5, 1, CV_64FC1);
+    image_size          = new(cv::Size);
 
     image_size->width = camera_calibration_data.width;
     image_size->height = camera_calibration_data.height;
 
     for(size_t i = 0; i < 3; i++)
         for(size_t j = 0; j < 3; j++)
-            intrinsics->at<double>(i,j) = camera_calibration_data.K.at(3*i+j);
+            camera_intrinsic->at<double>(i,j) = camera_calibration_data.K.at(3*i+j);
+
+    for(size_t i = 0; i < 3; i++)
+        for(size_t j = 0; j < 3; j++)
+            proj_matrix->at<double>(i,j) = camera_calibration_data.P.at(4*i+j);
 
     for(size_t i = 0; i < 5; i++)
-        distortion_coeff->at<double>(i,0) = camera_calibration_data.D.at(i);
+        dist_matrix->at<double>(i,0) = camera_calibration_data.D.at(i);
 
     ROS_DEBUG_STREAM("Image width: " << image_size->width);
     ROS_DEBUG_STREAM("Image height: " << image_size->height);
-    ROS_DEBUG_STREAM("Intrinsics:" << std::endl << *intrinsics);
-    ROS_DEBUG_STREAM("Distortion: " << *distortion_coeff);
+    ROS_DEBUG_STREAM("camera_intrinsic:" << std::endl << *camera_intrinsic);
+    ROS_DEBUG_STREAM("camera_intrinsic:" << std::endl << *proj_matrix);
+    ROS_DEBUG_STREAM("Distortion: " << *dist_matrix);
 
     //Simple check if calibration data meets expected values
-    if ((intrinsics->at<double>(2,2) == 1) && (distortion_coeff->at<double>(0,4) == 0)){
+    if ((camera_intrinsic->at<double>(2,2) == 1) && (dist_matrix->at<double>(0,4) == 0)){
         ROS_INFO_STREAM("Calibration data loaded successfully");
         return true;
     }
@@ -145,7 +138,7 @@ void project_lidar_points(){
 
     cv::Mat outputImage;
 
-    cv::undistort(cv_ptr->image, outputImage, cam_matrix, dist_matrix);
+    cv::undistort(cv_ptr->image, outputImage, *proj_matrix, *dist_matrix);
 
     std::vector<cv::Point3f> lid_pts;
 
@@ -161,8 +154,8 @@ void project_lidar_points(){
     overlay_points_on_image(   outputImage,
                                 rvec,
                                 tvec,
-                                cam_matrix,
-                                dist_matrix,
+                                *proj_matrix,
+                                *dist_matrix,
                                 lid_pts,
                                 720,
                                 1280,
@@ -182,8 +175,8 @@ void project_lidar_points(){
     overlay_points_on_image(   outputImage,
                                 rvec,
                                 tvec,
-                                cam_matrix,
-                                dist_matrix,
+                                *proj_matrix,
+                                *dist_matrix,
                                 poi,
                                 720,
                                 1280,
@@ -203,8 +196,8 @@ void project_lidar_points(){
     overlay_points_on_image(   outputImage,
                                 cv::Mat::eye(3,3,CV_32FC1),
                                 cv::Mat::zeros(3,1,CV_32FC1),
-                                cam_matrix,
-                                dist_matrix,
+                                *proj_matrix,
+                                *dist_matrix,
                                 cam_poi,
                                 720,
                                 1280,
@@ -260,11 +253,6 @@ int main(int argc, char **argv){
     n.getParam("/project_lidar_on_image_node/calibration_file", calibration_filename);
     parse_calibration_file(calibration_filename);
 
-    proj_matrix = cv::Mat(3, 4, CV_32FC1, p_mat);
-    trans_matrix = cv::Mat(4, 4, CV_32FC1, r_t);
-    dist_matrix = cv::Mat(1,5, CV_32FC1, dist_mat);
-    cam_matrix = cv::Mat(3,3, CV_32FC1, cam_mat);
-    cam_matrix_org = cv::Mat(3,3, CV_32FC1, cam_mat_org);
     rvec = cv::Mat(3,3, CV_32FC1, rot);
     tvec = cv::Mat(3,1, CV_32FC1, translation);
 
