@@ -95,6 +95,44 @@ void overlay_points_on_image(   cv::Mat &image,
     }
 }
 
+bool parse_calibration_file(std::string calib_filename){
+
+    sensor_msgs::CameraInfo camera_calibration_data;
+    std::string camera_name = "camera";
+
+    camera_calibration_parsers::readCalibrationIni(calib_filename, camera_name, camera_calibration_data);
+
+    // Alocation of memory for calibration data
+    cv::Mat  *intrinsics       = new(cv::Mat)(3, 3, CV_64F);
+    cv::Mat  *distortion_coeff = new(cv::Mat)(5, 1, CV_64F);
+    cv::Size *image_size       = new(cv::Size);
+
+    image_size->width = camera_calibration_data.width;
+    image_size->height = camera_calibration_data.height;
+
+    for(size_t i = 0; i < 3; i++)
+        for(size_t j = 0; j < 3; j++)
+            intrinsics->at<double>(i,j) = camera_calibration_data.K.at(3*i+j);
+
+    for(size_t i = 0; i < 5; i++)
+        distortion_coeff->at<double>(i,0) = camera_calibration_data.D.at(i);
+
+    ROS_DEBUG_STREAM("Image width: " << image_size->width);
+    ROS_DEBUG_STREAM("Image height: " << image_size->height);
+    ROS_DEBUG_STREAM("Intrinsics:" << std::endl << *intrinsics);
+    ROS_DEBUG_STREAM("Distortion: " << *distortion_coeff);
+
+    //Simple check if calibration data meets expected values
+    if ((intrinsics->at<double>(2,2) == 1) && (distortion_coeff->at<double>(0,4) == 0)){
+        ROS_INFO_STREAM("Calibration data loaded successfully");
+        return true;
+    }
+    else{
+        ROS_WARN("Wrong calibration data, check calibration file and filepath");
+        return false;
+    }
+}
+
 void project_lidar_points(){
     if(new_lidar_cloud == false || new_image == false){
         return;

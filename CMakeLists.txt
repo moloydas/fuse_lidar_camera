@@ -12,7 +12,8 @@ find_package(catkin REQUIRED
             pcl_ros
             pcl_conversions
             cv_bridge
-	        image_transport)
+	        image_transport
+          camera_calibration_parsers)
 
 find_package(OpenCV REQUIRED)
 

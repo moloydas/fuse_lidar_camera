@@ -6,6 +6,7 @@
 #include <fstream>
 
 #include <ros/ros.h>
+#include <camera_calibration_parsers/parse_ini.h>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
