@@ -18,6 +18,9 @@ cv::Size *image_size;
 cv::Mat *rot_mat;
 cv::Mat *t_mat;
 
+std::vector<cv::Point3f> poi;
+std::vector<cv::Point3f> cam_poi;
+
 cv_bridge::CvImagePtr cv_ptr;
 image_transport::Publisher lc_image_pub;
 image_transport::Subscriber image_sub;
@@ -150,16 +153,6 @@ void project_lidar_points(){
                                 cv::Scalar(0,255,0),
                                 1 );
 
-    std::vector<cv::Point3f> poi;
-    poi.push_back(cv::Point3f(-0.725787, -0.300817, 1.75655));
-    poi.push_back(cv::Point3f(-0.373926, 0.0987597, 1.77497));
-    poi.push_back(cv::Point3f(-0.706638, 0.407004, 1.74148));
-    poi.push_back(cv::Point3f(-1.08684, 0.00340891, 1.74881));
-    poi.push_back(cv::Point3f(0.113457, -0.31275, 1.84271));
-    poi.push_back(cv::Point3f(0.468701, 0.0889406, 1.90563));
-    poi.push_back(cv::Point3f(0.137314, 0.406434, 1.81652));
-    poi.push_back(cv::Point3f(-0.234975, -0.0053591, 1.76959));
-
     overlay_points_on_image(   outputImage,
                                 *rot_mat,
                                 *t_mat,
@@ -170,16 +163,6 @@ void project_lidar_points(){
                                 1280,
                                 cv::Scalar(255,0,0),
                                 4 );
-
-    std::vector<cv::Point3f> cam_poi;
-    cam_poi.push_back(cv::Point3f(-0.257861, -0.350891, 1.66645));
-    cam_poi.push_back(cv::Point3f(0.111404, 0.0422095 ,1.6397));
-    cam_poi.push_back(cv::Point3f(-0.223684, 0.35374 ,1.59211));
-    cam_poi.push_back(cv::Point3f(-0.592948, -0.0393605 ,1.61885));
-    cam_poi.push_back(cv::Point3f(0.614391 ,-0.356681 ,1.73359));
-    cam_poi.push_back(cv::Point3f(0.970656, 0.0406231 ,1.8162));
-    cam_poi.push_back(cv::Point3f(0.633394, 0.351058 ,1.77768));
-    cam_poi.push_back(cv::Point3f(0.277129, -0.0462458 ,1.69507));
 
     overlay_points_on_image(   outputImage,
                                 cv::Mat::eye(3,3,CV_32FC1),
@@ -251,7 +234,6 @@ int main(int argc, char **argv){
     t_mat = new(cv::Mat)(3,1, CV_64FC1);
 
     ifstream f(trans_filename.c_str());
-
     for(int i=0;i<3;i++){
         for(int j=0;j<4;j++){
             if(j != 3){
@@ -262,9 +244,30 @@ int main(int argc, char **argv){
             }
         }
     }
+    f.close();
 
     cout << "Rot_mat" << endl << *rot_mat << endl;
     cout << "translation_mat" << endl << *t_mat << endl;
+
+    string points_filename = "/home/moloy/ros_ws/iiit_ros_ws/src/lidar_camera_calibration/conf/points.txt";
+    ifstream fp(points_filename.c_str());
+
+    float x,y,z;
+    int num_pts=0;
+    fp >> num_pts;
+    for(int i=0;i<num_pts;i++){
+        fp >> x;
+        fp >> y;
+        fp >> z;
+        poi.push_back(cv::Point3f(x, y, z));
+    }
+    for(int i=0;i<num_pts;i++){
+        fp >> x;
+        fp >> y;
+        fp >> z;
+        cam_poi.push_back(cv::Point3f(x, y, z));
+    }
+    fp.close();
 
     cv_ptr = cv_bridge::CvImagePtr(new cv_bridge::CvImage);
 
