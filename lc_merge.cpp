@@ -256,8 +256,11 @@ int main(int argc, char **argv){
     image_sub = it.subscribe("zed/zed_node/left_raw/image_raw_color", 1,imageCb);
     lc_image_pub = it.advertise("lc_image",1);
 
-    proj_matrix = cv::Mat(3, 4, CV_32FC1, p_mat);
+    std::string calibration_filename;
+    n.getParam("/project_lidar_on_image_node/calibration_file", calibration_filename);
+    parse_calibration_file(calibration_filename);
 
+    proj_matrix = cv::Mat(3, 4, CV_32FC1, p_mat);
     trans_matrix = cv::Mat(4, 4, CV_32FC1, r_t);
     dist_matrix = cv::Mat(1,5, CV_32FC1, dist_mat);
     cam_matrix = cv::Mat(3,3, CV_32FC1, cam_mat);
