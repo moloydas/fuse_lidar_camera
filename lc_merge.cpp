@@ -131,10 +131,6 @@ void project_lidar_points(){
     std::vector<cv::Point3f> lid_pts;
 
     for( size_t i=0; i<cloudSize; i++){
-        /*
-            Keep the points within a certain z distance
-         */
-        if(laserCloudIn->points[i].z < 1 || laserCloudIn->points[i].z > 2) continue;
 
         lid_pts.push_back( cv::Point3f(laserCloudIn->points[i].x, laserCloudIn->points[i].y, laserCloudIn->points[i].z) );
     }
