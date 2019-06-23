@@ -141,8 +141,8 @@ void project_lidar_points(){
                                 *proj_matrix,
                                 *dist_matrix,
                                 lid_pts,
-                                720,
-                                1280,
+                                outputImage.rows,
+                                outputImage.cols,
                                 cv::Scalar(0,255,0),
                                 1 );
 
