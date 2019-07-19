@@ -41,37 +41,6 @@ pcl::PointCloud<PointType> transform(pcl::PointCloud<PointType> pc, float x, flo
 	return new_cloud;
 }
 
-/*
-    input: Image, trans, rot, projection, distortion, points to be projected, image dim, color
- */
-void overlay_points_on_image(   cv::Mat &image,
-                                cv::Mat rot,
-                                cv::Mat trans,
-                                cv::Mat p_mat,
-                                cv::Mat dist_mat,
-                                std::vector<cv::Point3f> pts,
-                                unsigned int img_height,
-                                unsigned int img_width,
-                                cv::Scalar color,
-                                int thickness){
-
-    cv::Mat proj_pts;
-    cv::Mat rvec;
-    cv::Rodrigues(rot, rvec);
-    cv::projectPoints(pts, rvec, trans, p_mat, dist_mat, proj_pts);
-
-    short x_,y_=0;
-    for(size_t i=0; i < proj_pts.rows; i++){
-
-        x_ = short( proj_pts.at<float>(i,0) );
-        y_ = short( proj_pts.at<float>(i,1) );
-
-        if(y_ < img_height && x_ < img_width && x_ > 0 && y_ > 0){
-            cv::circle(image, cv::Point(x_,y_), 4, color, thickness, 8, 0);
-        }
-    }
-}
-
 bool parse_calibration_file(std::string calib_filename){
 
     sensor_msgs::CameraInfo camera_calibration_data;
@@ -128,31 +97,32 @@ void project_lidar_points(){
 
     cv::Mat outputImage;
 
-    cv::undistort(cv_ptr->image, outputImage, *proj_matrix, *dist_matrix);
+    // cv::undistort(cv_ptr->image, outputImage, *proj_matrix, *dist_matrix);
+    outputImage = cv_ptr->image;
 
     std::vector<cv::Point3f> lid_pts;
+    cv::Mat x(4,1, CV_64FC1);
+    cv::Mat y(3,1, CV_64FC1);
+    x.at<double>(3,0) = 1;
+
+    short x_,y_=0;
 
     for( size_t i=0; i<cloudSize; i++){
+        x.at<double>(0,0) = laserCloudIn->points[i].x;
+        x.at<double>(1,0) = laserCloudIn->points[i].y;
+        x.at<double>(2,0) = laserCloudIn->points[i].z;
 
-        lid_pts.push_back( cv::Point3f(laserCloudIn->points[i].x, laserCloudIn->points[i].y, laserCloudIn->points[i].z) );
+        // consider only the lidar points in front
+        if(x.at<double>(0,0) < 0 ) continue;
+
+        y = *proj_matrix * R_rect_mat * T_mat * x;
+        x_ = short( y.at<double>(0,0)/y.at<double>(0,2) );
+        y_ = short( y.at<double>(0,1)/y.at<double>(0,2) );
+
+        if(y_ < outputImage.rows && x_ < outputImage.cols && x_ > 0 && y_ > 0){
+            cv::circle(outputImage, cv::Point(x_,y_), 1, cv::Scalar(0,255,0), 1, 8, 0);
+        }
     }
-
-    overlay_points_on_image(   outputImage,
-                                *rot_mat,
-                                *t_mat,
-                                *proj_matrix,
-                                *dist_matrix,
-                                lid_pts,
-                                outputImage.rows,
-                                outputImage.cols,
-                                cv::Scalar(0,255,0),
-                                1 );
-
-    /*  TO DO:
-        * check the intensity value of that corresponding point on image
-        * if its not a road point push it to another vector
-        * publish vector
-     */
 
     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", cv_ptr->image).toImageMsg();
     lc_image_pub.publish(msg);
@@ -166,7 +136,6 @@ void get_lidar_cloud(const sensor_msgs::PointCloud2ConstPtr& msg){
     frame_time = msg->header.stamp.toSec();
     frame_id = msg->header.frame_id;
     pcl::fromROSMsg(*msg, *laserCloudIn);
-    *laserCloudIn = transform(*laserCloudIn, 0, 0, 0, 1.57, -1.57, 0);
     new_lidar_cloud = true;
 }
 
