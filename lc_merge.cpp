@@ -81,7 +81,7 @@ bool parse_calibration_file(std::string calib_filename){
 
     // Alocation of memory for calibration data
     camera_intrinsic    = new(cv::Mat)(3, 3, CV_64FC1);
-    proj_matrix         = new(cv::Mat)(3, 3, CV_64FC1);
+    proj_matrix         = new(cv::Mat)(3, 4, CV_64FC1);
     dist_matrix         = new(cv::Mat)(5, 1, CV_64FC1);
     image_size          = new(cv::Size);
 
@@ -93,7 +93,7 @@ bool parse_calibration_file(std::string calib_filename){
             camera_intrinsic->at<double>(i,j) = camera_calibration_data.K.at(3*i+j);
 
     for(size_t i = 0; i < 3; i++)
-        for(size_t j = 0; j < 3; j++)
+        for(size_t j = 0; j < 4; j++)
             proj_matrix->at<double>(i,j) = camera_calibration_data.P.at(4*i+j);
 
     for(size_t i = 0; i < 5; i++)
