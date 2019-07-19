@@ -103,10 +103,13 @@ void project_lidar_points(){
     std::vector<cv::Point3f> lid_pts;
     cv::Mat x(4,1, CV_64FC1);
     cv::Mat y(3,1, CV_64FC1);
+    cv::Mat rgb_color(1,1, CV_8UC3);
+    cv::Mat hsv_color(1,1, CV_8UC3,cv::Scalar::all(150));
+
     x.at<double>(3,0) = 1;
 
     short x_,y_=0;
-
+    double range = 0;
     for( size_t i=0; i<cloudSize; i++){
         x.at<double>(0,0) = laserCloudIn->points[i].x;
         x.at<double>(1,0) = laserCloudIn->points[i].y;
@@ -120,7 +123,12 @@ void project_lidar_points(){
         y_ = short( y.at<double>(0,1)/y.at<double>(0,2) );
 
         if(y_ < outputImage.rows && x_ < outputImage.cols && x_ > 0 && y_ > 0){
-            cv::circle(outputImage, cv::Point(x_,y_), 1, cv::Scalar(0,255,0), 1, 8, 0);
+            range = pow(laserCloudIn->points[i].x,2) + pow(laserCloudIn->points[i].y,2) + pow(laserCloudIn->points[i].z,2);
+            range = sqrt(range) * 2.5;
+            hsv_color.at<cv::Vec3b>(0,0)[0] = range;
+            cv::cvtColor(hsv_color, rgb_color, cv::COLOR_HSV2RGB);
+            cv::Vec3b rgb = rgb_color.at<cv::Vec3b>(0,0);
+            cv::circle(outputImage, cv::Point(x_,y_), 2, cv::Scalar((int)rgb.val[0],(int)rgb.val[1],(int)rgb.val[2]), 1, 8, 0);
         }
     }
 
