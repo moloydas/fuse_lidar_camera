@@ -18,6 +18,7 @@ cv::Size *image_size;
 
 cv::Mat *rot_mat;
 cv::Mat *t_mat;
+cv::Mat T_mat;
 
 cv_bridge::CvImagePtr cv_ptr;
 image_transport::Publisher lc_image_pub;
@@ -203,6 +204,7 @@ int main(int argc, char **argv){
 
     rot_mat = new(cv::Mat)(3,3, CV_64FC1);
     t_mat = new(cv::Mat)(3,1, CV_64FC1);
+    T_mat = cv::Mat(4,4,CV_64FC1,cv::Scalar(0));
 
     R_rect_mat = cv::Mat(4,4,CV_64FC1,R_rect);
     cout << "R_rect mat" << endl << R_rect_mat << endl;
@@ -213,15 +215,20 @@ int main(int argc, char **argv){
         for(int j=0;j<4;j++){
             if(j != 3){
                 f >> rot_mat->at<double>(i,j);
+                T_mat.at<double>(i,j) = rot_mat->at<double>(i,j);
             }
             else{
                 f >> t_mat->at<double>(i,0);
+                T_mat.at<double>(i,j) = t_mat->at<double>(i,0);
             }
         }
     }
 
+    T_mat.at<double>(3,3) = 1;
+
     cout << "Rot_mat" << endl << *rot_mat << endl;
     cout << "translation_mat" << endl << *t_mat << endl;
+    cout << "Transformation_mat" << endl << T_mat << endl;
 
     cv_ptr = cv_bridge::CvImagePtr(new cv_bridge::CvImage);
 
