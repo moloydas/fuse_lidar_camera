@@ -13,6 +13,7 @@ ros::Publisher pub;
 cv::Mat *proj_matrix;
 cv::Mat *camera_intrinsic;
 cv::Mat *dist_matrix;
+cv::Mat R_rect_mat;
 cv::Size *image_size;
 
 cv::Mat *rot_mat;
@@ -29,7 +30,7 @@ string frame_id;
 
 uint32_t cloudSize = 0;
 
-float board[] = {-46.3,-54.2,-5.0,-4.0,19.25};
+double R_rect[] = {9.998817e-01, 1.511453e-02, -2.841595e-03, 0, -1.511724e-02, 9.998853e-01, -9.338510e-04,0, 2.827154e-03, 9.766976e-04, 9.999955e-01,0,0,0,0,1};
 
 pcl::PointCloud<PointType> transform(pcl::PointCloud<PointType> pc, float x, float y, float z, float rot_x, float rot_y, float rot_z)
 {
@@ -202,6 +203,9 @@ int main(int argc, char **argv){
 
     rot_mat = new(cv::Mat)(3,3, CV_64FC1);
     t_mat = new(cv::Mat)(3,1, CV_64FC1);
+
+    R_rect_mat = cv::Mat(4,4,CV_64FC1,R_rect);
+    cout << "R_rect mat" << endl << R_rect_mat << endl;
 
     ifstream f(trans_filename.c_str());
 
